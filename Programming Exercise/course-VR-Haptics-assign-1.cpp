@@ -63,7 +63,9 @@ void myDisplay(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
      //**==> use command: gluLookAt(eye.x,y,z, look.x,y,z, up.x,y,z);
-    
+    gluLookAt(5+distance_x, 5+distance_y, 5,
+          0, 0, 0,
+          0, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //clear screen
 
 
@@ -74,15 +76,119 @@ void myDisplay(void)
         
         glPushMatrix();
             //**==> Draw Cube... you can use commands: glColor*(...); glBegin(...); ... glNormal*(...); glVertex*(...);  ... glEnd(); etc.
+            glTranslatef(-1.5, 0, 0);
+
+            glBegin(GL_QUADS);
+
+            // FRONT
+            glNormal3f(0,0,1);
+            glVertex3f(-0.5,-0.5,0.5);
+            glVertex3f(0.5,-0.5,0.5);
+            glVertex3f(0.5,0.5,0.5);
+            glVertex3f(-0.5,0.5,0.5);
+
+            // BACK
+            glNormal3f(0,0,-1);
+            glVertex3f(-0.5,-0.5,-0.5);
+            glVertex3f(-0.5,0.5,-0.5);
+            glVertex3f(0.5,0.5,-0.5);
+            glVertex3f(0.5,-0.5,-0.5);
+
+            // LEFT
+            glNormal3f(-1,0,0);
+            glVertex3f(-0.5,-0.5,-0.5);
+            glVertex3f(-0.5,-0.5,0.5);
+            glVertex3f(-0.5,0.5,0.5);
+            glVertex3f(-0.5,0.5,-0.5);
+
+            // RIGHT
+            glNormal3f(1,0,0);
+            glVertex3f(0.5,-0.5,-0.5);
+            glVertex3f(0.5,0.5,-0.5);
+            glVertex3f(0.5,0.5,0.5);
+            glVertex3f(0.5,-0.5,0.5);
+
+            // TOP
+            glNormal3f(0,1,0);
+            glVertex3f(-0.5,0.5,-0.5);
+            glVertex3f(-0.5,0.5,0.5);
+            glVertex3f(0.5,0.5,0.5);
+            glVertex3f(0.5,0.5,-0.5);
+
+            // BOTTOM
+            glNormal3f(0,-1,0);
+            glVertex3f(-0.5,-0.5,-0.5);
+            glVertex3f(0.5,-0.5,-0.5);
+            glVertex3f(0.5,-0.5,0.5);
+            glVertex3f(-0.5,-0.5,0.5);
+
+            glEnd();
         glPopMatrix();
 
         glPushMatrix();
             //**==> glTranslated(...);
             //**==> Draw Conical Surface...
+            glTranslatef(0, 0, 0);
+
+            int slices = 30;
+            float radius = 0.5;
+            float height = 1.5;
+
+            for(int i=0; i<slices; i++){
+                float theta = 2*M_PI*i/slices;
+                float next = 2*M_PI*(i+1)/slices;
+
+                glBegin(GL_QUADS);
+
+                glNormal3f(cos(theta),0,sin(theta));
+                glVertex3f(radius*cos(theta),0,radius*sin(theta));
+
+                glNormal3f(cos(next),0,sin(next));
+                glVertex3f(radius*cos(next),0,radius*sin(next));
+
+                glVertex3f(radius*cos(next),height,radius*sin(next));
+                glVertex3f(radius*cos(theta),height,radius*sin(theta));
+
+                glEnd();
+            }
+
         glPopMatrix();
 
         // similarly draw other 3D geometric objects
+        glPushMatrix();
+            glTranslatef(1.5, 0, 0);
 
+            int stacks = 20;
+            int slices = 20;
+            float r = 0.5;
+
+            for(int i=0;i<stacks;i++){
+                float phi = M_PI*i/stacks;
+                float nextPhi = M_PI*(i+1)/stacks;
+
+                for(int j=0;j<slices;j++){
+                    float theta = 2*M_PI*j/slices;
+                    float nextTheta = 2*M_PI*(j+1)/slices;
+
+                    glBegin(GL_QUADS);
+
+                    glNormal3f(sin(phi)*cos(theta), cos(phi), sin(phi)*sin(theta));
+                    glVertex3f(r*sin(phi)*cos(theta), r*cos(phi), r*sin(phi)*sin(theta));
+
+                    glNormal3f(sin(nextPhi)*cos(theta), cos(nextPhi), sin(nextPhi)*sin(theta));
+                    glVertex3f(r*sin(nextPhi)*cos(theta), r*cos(nextPhi), r*sin(nextPhi)*sin(theta));
+
+                    glNormal3f(sin(nextPhi)*cos(nextTheta), cos(nextPhi), sin(nextPhi)*sin(nextTheta));
+                    glVertex3f(r*sin(nextPhi)*cos(nextTheta), r*cos(nextPhi), r*sin(nextPhi)*sin(nextTheta));
+
+                    glNormal3f(sin(phi)*cos(nextTheta), cos(phi), sin(phi)*sin(nextTheta));
+                    glVertex3f(r*sin(phi)*cos(nextTheta), r*cos(phi), r*sin(phi)*sin(nextTheta));
+
+                    glEnd();
+                }
+            }
+
+        glPopMatrix();
     glPopMatrix();
 
 
