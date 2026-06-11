@@ -1,0 +1,384 @@
+// === Course VR and Haptics (K.Tzafestas) ===
+// === Sample Source Code for assignment 1 ===
+
+#include <windows.h>
+#include <stdio.h>
+#include <math.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
+
+int mouse_posx, mouse_posy;
+int d_mouse_posx, d_mouse_posy;
+int mousebutton_down = 0;
+
+float camX = 5.0f;
+float camY = 3.0f;
+float camZ = 8.0f;
+
+float lookX = 0.0f;
+float lookY = 0.0f;
+float lookZ = 0.0f;
+
+int renderMode = 1;
+// 0 = Wireframe
+// 1 = Smooth
+// 2 = Flat
+
+float ballY = 3.0f;
+float ballVel = 0.0f;
+
+float gravity = -0.005f;
+float restitution = 0.8f;
+// ===== set Viewport (screen window) =====
+void setViewport(int left, int right, int bottom, int top)
+{
+    glViewport(left, bottom, right - left, top - bottom);
+}
+
+// ===== Personalized Initialization Procedure =====
+void myInit(GLint mywidth, GLint myheight)
+{
+    glClearColor(1.0,1.0,1.0,0.0);  //set (white) background color
+    glColor3f(0.0f, 0.0f, 0.0f);    //set the drawing color
+
+    //set 3D World-Coordinates Window: glOrtho(left,right, bottom,top, near,far)
+    GLfloat aspect = (GLfloat)mywidth/(GLfloat)myheight;
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(
+    60.0,
+    (double)mywidth/(double)myheight,
+    0.1,
+    100.0);
+    glOrtho(-2.0*aspect, 2.0*aspect, -2.0, 2.0, 0.1, 100.0);
+    //--------------------------------------------------------------------------
+
+    setViewport(0, mywidth, 0, myheight);   //set viewport window (screen coordinates)
+}
+
+
+// ===== Personalized Display Procedure =====
+void myDisplay(void)
+{
+    //** Set properties of surface material: choose the collor and material properties you like
+    //-----------------------------------------------------------------------------------------
+    GLfloat mat_ambient[] = {0.7f, 0.7f, 0.7f, 1.0f};   //**==> you can choose the surface properties of your preference
+    GLfloat mat_diffuse[] = {0.6f, 0.6f, 0.6f, 1.0f};   // ...
+    GLfloat mat_specular[] = {1.0f, 1.0f, 1.0f, 1.0f};  // ...
+    GLfloat mat_shininess[] = {50.0f};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+    //set light sources
+    //-----------------
+    GLfloat lightIntensity[] = {0.7f, 0.7f, 0.7f, 1.0f}; //**==> you can choose the light properties of your preference
+    GLfloat lightPosition[] = {2.0f, 6.0f, 3.0f, 0.0f};  // ...
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightIntensity);
+
+    if(renderMode == 0){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    else{
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
+    if(renderMode == 1){
+        glShadeModel(GL_SMOOTH);
+    }
+    else if(renderMode == 2){
+        glShadeModel(GL_FLAT);
+    }
+    //set the Camera model ==>  animate camera motion --> set 3D World-Coordinates Window
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+     //**==> use command: gluLookAt(eye.x,y,z, look.x,y,z, up.x,y,z);
+    gluLookAt(camX, camY, camZ,
+          lookX, lookY, lookZ,
+          0, 1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //clear screen
+    
+    //Floor
+    glPushMatrix();
+
+    glColor3f(0.8f,0.8f,0.8f);
+
+    glBegin(GL_QUADS);
+
+    glNormal3f(0,1,0);
+
+    glVertex3f(-5,0,-5);
+    glVertex3f( 5,0,-5);
+    glVertex3f( 5,0, 5);
+    glVertex3f(-5,0, 5);
+
+    glEnd();
+
+    glPopMatrix();    
+    glPushMatrix();
+    
+        // animate object motion
+        //**==> use functions: glTranslatef(...) or glRotatef(...)
+        
+        glPushMatrix();
+            //**==> Draw Cube... you can use commands: glColor*(...); glBegin(...); ... glNormal*(...); glVertex*(...);  ... glEnd(); etc.
+            glTranslatef(1.5f, ballY, 0.0f);
+
+            glBegin(GL_QUADS);
+
+            // FRONT
+            glNormal3f(0,0,1);
+            glVertex3f(-0.5,-0.5,0.5);
+            glVertex3f(0.5,-0.5,0.5);
+            glVertex3f(0.5,0.5,0.5);
+            glVertex3f(-0.5,0.5,0.5);
+
+            // BACK
+            glNormal3f(0,0,-1);
+            glVertex3f(-0.5,-0.5,-0.5);
+            glVertex3f(-0.5,0.5,-0.5);
+            glVertex3f(0.5,0.5,-0.5);
+            glVertex3f(0.5,-0.5,-0.5);
+
+            // LEFT
+            glNormal3f(-1,0,0);
+            glVertex3f(-0.5,-0.5,-0.5);
+            glVertex3f(-0.5,-0.5,0.5);
+            glVertex3f(-0.5,0.5,0.5);
+            glVertex3f(-0.5,0.5,-0.5);
+
+            // RIGHT
+            glNormal3f(1,0,0);
+            glVertex3f(0.5,-0.5,-0.5);
+            glVertex3f(0.5,0.5,-0.5);
+            glVertex3f(0.5,0.5,0.5);
+            glVertex3f(0.5,-0.5,0.5);
+
+            // TOP
+            glNormal3f(0,1,0);
+            glVertex3f(-0.5,0.5,-0.5);
+            glVertex3f(-0.5,0.5,0.5);
+            glVertex3f(0.5,0.5,0.5);
+            glVertex3f(0.5,0.5,-0.5);
+
+            // BOTTOM
+            glNormal3f(0,-1,0);
+            glVertex3f(-0.5,-0.5,-0.5);
+            glVertex3f(0.5,-0.5,-0.5);
+            glVertex3f(0.5,-0.5,0.5);
+            glVertex3f(-0.5,-0.5,0.5);
+
+            glEnd();
+        glPopMatrix();
+
+        glPushMatrix();
+            //**==> glTranslated(...);
+            //**==> Draw Conical Surface...
+            glTranslatef(0, 0, 0);
+
+            int slices = 30;
+            float radius = 0.5;
+            float height = 1.5;
+
+            for(int i=0; i<slices; i++){
+                float theta = 2*M_PI*i/slices;
+                float next = 2*M_PI*(i+1)/slices;
+
+                glBegin(GL_QUADS);
+
+                glNormal3f(cos(theta),0,sin(theta));
+                glVertex3f(radius*cos(theta),0,radius*sin(theta));
+
+                glNormal3f(cos(next),0,sin(next));
+                glVertex3f(radius*cos(next),0,radius*sin(next));
+
+                glVertex3f(radius*cos(next),height,radius*sin(next));
+                glVertex3f(radius*cos(theta),height,radius*sin(theta));
+
+                glEnd();
+            }
+
+        glPopMatrix();
+
+        // similarly draw other 3D geometric objects
+        glPushMatrix();
+            glTranslatef(1.5, 0, 0);
+
+            int stacks = 20;
+            int slices = 20;
+            float r = 0.5;
+
+            for(int i=0;i<stacks;i++){
+                float phi = M_PI*i/stacks;
+                float nextPhi = M_PI*(i+1)/stacks;
+
+                for(int j=0;j<slices;j++){
+                    float theta = 2*M_PI*j/slices;
+                    float nextTheta = 2*M_PI*(j+1)/slices;
+
+                    glBegin(GL_QUADS);
+
+                    glNormal3f(sin(phi)*cos(theta), cos(phi), sin(phi)*sin(theta));
+                    glVertex3f(r*sin(phi)*cos(theta), r*cos(phi), r*sin(phi)*sin(theta));
+
+                    glNormal3f(sin(nextPhi)*cos(theta), cos(nextPhi), sin(nextPhi)*sin(theta));
+                    glVertex3f(r*sin(nextPhi)*cos(theta), r*cos(nextPhi), r*sin(nextPhi)*sin(theta));
+
+                    glNormal3f(sin(nextPhi)*cos(nextTheta), cos(nextPhi), sin(nextPhi)*sin(nextTheta));
+                    glVertex3f(r*sin(nextPhi)*cos(nextTheta), r*cos(nextPhi), r*sin(nextPhi)*sin(nextTheta));
+
+                    glNormal3f(sin(phi)*cos(nextTheta), cos(phi), sin(phi)*sin(nextTheta));
+                    glVertex3f(r*sin(phi)*cos(nextTheta), r*cos(phi), r*sin(phi)*sin(nextTheta));
+
+                    glEnd();
+                }
+            }
+
+        glPopMatrix();
+    glPopMatrix();
+
+
+    //glFlush();    //send all output to display (for GLUT_SINGLE)
+    glutSwapBuffers(); //for double buffering (GLUT_DOUBLE)
+
+}
+
+
+void Update()
+{
+    ballVel += gravity;
+    ballY += ballVel;
+
+    if(ballY <= 0.5f)
+    {
+        ballY = 0.5f;
+        ballVel = -ballVel * restitution;
+    }
+
+    glutPostRedisplay();
+}
+
+
+//--------------------------------------
+//==== Mouse Interaction Procedures ====
+//--------------------------------------
+
+void myMouse(int button, int state, int x, int y)
+{
+
+   if (state == GLUT_DOWN)
+    {
+        switch (button)
+        {
+            case GLUT_LEFT_BUTTON:  
+                mousebutton_down = 1;
+                break;
+            case GLUT_RIGHT_BUTTON:  
+                break;
+            case GLUT_MIDDLE_BUTTON:  
+                break;
+        }
+        mouse_posx = x;
+        mouse_posy = y;
+   }
+    else
+    {
+        mousebutton_down = 0;
+        d_mouse_posx = 0;
+        d_mouse_posy = 0;
+    }
+
+}
+
+void myMovedMouse(int mouseX, int mouseY)
+{
+
+    d_mouse_posx = mouseX - mouse_posx ;
+    d_mouse_posy = -mouseY + mouse_posy ;
+    mouse_posx = mouseX;
+    mouse_posy = mouseY;
+
+    switch (mousebutton_down)
+    {   
+        //*===> choose the mouse interaction settings of your preference
+        case 1: distance_x += 0.005*d_mouse_posx;
+                distance_y += 0.005*d_mouse_posy;
+                printf("dx = %f, dy = %f \n", distance_x, distance_y);
+                break;
+    }
+}
+
+//--------------------------------------
+//==== Keyboard Interaction Procedures ====
+//--------------------------------------
+void myKeyboard(unsigned char theKey, int mouseX, int mouseY)
+{
+   switch(theKey)
+    {
+        case 'm':
+            renderMode++;
+            renderMode %= 3;
+            break;
+
+        case 'r':
+            ballY = 3.0f;
+            ballVel = 0.0f;
+            break;
+    }
+
+    glutPostRedisplay();
+}
+void specialKeys(int key, int x, int y)
+{
+    float step = 0.2f;
+
+    switch(key)
+    {
+        case GLUT_KEY_UP:
+            camZ -= step;
+            break;
+
+        case GLUT_KEY_DOWN:
+            camZ += step;
+            break;
+
+        case GLUT_KEY_LEFT:
+            camX -= step;
+            break;
+
+        case GLUT_KEY_RIGHT:
+            camX += step;
+            break;
+    }
+
+    glutPostRedisplay();
+}
+//----------------------
+//==== Main Program ====
+//----------------------
+void main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE| GLUT_RGB | GLUT_DEPTH); // DOUBLE BUFFERING and Z-BUFFERING 
+    glutInitWindowSize(640, 480);
+    glutInitWindowPosition(100,150);
+    glutCreateWindow("Simple 3D Shaded Scene");
+    glutDisplayFunc(myDisplay);
+    glutIdleFunc(Update);        // User provided Update function
+    glutMouseFunc(myMouse);      // mouse pressed/released
+    glutMotionFunc(myMovedMouse);    // mouse moved
+    glutKeyboardFunc(myKeyboard);    // key pressed
+    glutSpecialFunc(specialKeys);   // Special Key
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_DEPTH_TEST);    //hidden surface removal
+    glEnable(GL_NORMALIZE);     //normalize vectors for proper shading
+
+    myInit(640, 480);
+    glutMainLoop();
+}
